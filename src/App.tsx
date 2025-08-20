@@ -141,9 +141,13 @@ function App() {
               <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
             )}
             {activeTab === 'summary' && (
-              <AIPredictionPanel 
-                inputs={inputs as InputModel} 
-                goal={{ targetCycleTimePct: -10 }} 
+              <AIPredictionPanel
+                inputs={inputs as InputModel}
+                goal={{ targetCycleTimePct: -10 }}
+                data={simulationData}
+                steps={calculationSteps}
+                warnings={validation.warnings}
+                tips={validation.tips}
               />
             )}
           </div>
@@ -179,9 +183,13 @@ function App() {
             {simulationData && (
               <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
             )}
-            <AIPredictionPanel 
-              inputs={inputs as InputModel} 
-              goal={{ targetCycleTimePct: -10 }} 
+            <AIPredictionPanel
+              inputs={inputs as InputModel}
+              goal={{ targetCycleTimePct: -10 }}
+              data={simulationData}
+              steps={calculationSteps}
+              warnings={validation.warnings}
+              tips={validation.tips}
             />
             </div>
           </div>
