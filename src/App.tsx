@@ -7,6 +7,7 @@ import { InputPanel } from './components/InputPanel';
 import { OutputPanel } from './components/OutputPanel';
 import { ChartsPanel } from './components/ChartsPanel';
 import { SummaryPanel } from './components/SummaryPanel';
+import { AIPredictionPanel } from './components/AIPredictionPanel';
 
 function App() {
   const [inputs, setInputs] = useState<Partial<InputModel>>({
@@ -139,6 +140,12 @@ function App() {
             {activeTab === 'summary' && simulationData && (
               <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
             )}
+            {activeTab === 'summary' && (
+              <AIPredictionPanel 
+                inputs={inputs as InputModel} 
+                goal={{ targetCycleTimePct: -10 }} 
+              />
+            )}
           </div>
         </div>
 
@@ -168,9 +175,15 @@ function App() {
 
           {/* Right Sidebar - Summary */}
           <div className="lg:col-span-3">
+            <div className="space-y-6">
             {simulationData && (
               <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
             )}
+            <AIPredictionPanel 
+              inputs={inputs as InputModel} 
+              goal={{ targetCycleTimePct: -10 }} 
+            />
+            </div>
           </div>
         </div>
       </div>
