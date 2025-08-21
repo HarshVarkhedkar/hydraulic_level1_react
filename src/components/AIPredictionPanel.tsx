@@ -157,7 +157,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         <button
           onClick={handleGeneratePDF}
           disabled={isGeneratingPDF}
-          className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
         >
           {isGeneratingPDF ? (
             <>
@@ -167,7 +167,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
           ) : (
             <>
               <FileText size={14} />
-              Export PDF
+              Generate Report
             </>
           )}
         </button>

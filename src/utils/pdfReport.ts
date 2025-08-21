@@ -349,44 +349,73 @@ export class PDFReportGenerator {
    */
   private async addCharts(): Promise<void> {
     try {
-      // Try multiple selectors to find the charts container
-      let chartsContainer = document.getElementById('charts-container');
+      // Wait for charts to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Try multiple strategies to find charts
+      let chartsContainer = document.querySelector('[data-charts="simulation-charts"]') as HTMLElement;
       
       if (!chartsContainer) {
-        // Fallback: look for the charts panel by class or other identifiers
-        chartsContainer = document.querySelector('[id*="charts"]') as HTMLElement;
+        chartsContainer = document.getElementById('charts-container') as HTMLElement;
       }
       
       if (!chartsContainer) {
-        // Another fallback: look for recharts containers
-        const rechartContainers = document.querySelectorAll('.recharts-wrapper');
-        if (rechartContainers.length > 0) {
-          // Create a temporary container to hold all charts
+        // Look for individual chart containers
+        const chartElements = document.querySelectorAll('[data-chart]');
+        if (chartElements.length > 0) {
+          // Create a temporary container
           chartsContainer = document.createElement('div');
           chartsContainer.style.backgroundColor = '#1f2937';
           chartsContainer.style.padding = '20px';
+          chartsContainer.style.borderRadius = '8px';
           
-          rechartContainers.forEach((chart, index) => {
+          chartElements.forEach((chart) => {
             const chartClone = chart.cloneNode(true) as HTMLElement;
-            const title = document.createElement('h3');
-            title.style.color = 'white';
-            title.style.marginBottom = '10px';
-            title.style.fontSize = '16px';
-            
-            // Add appropriate titles based on chart index
-            const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
-            title.textContent = titles[index] || `Chart ${index + 1}`;
-            
-            chartsContainer!.appendChild(title);
             chartsContainer!.appendChild(chartClone);
           });
           
-          // Temporarily add to DOM for capture
           document.body.appendChild(chartsContainer);
+        } else {
+          // Final fallback: look for recharts containers
+          const rechartContainers = document.querySelectorAll('.recharts-wrapper');
+          if (rechartContainers.length > 0) {
+            chartsContainer = document.createElement('div');
+            chartsContainer.style.backgroundColor = '#1f2937';
+            chartsContainer.style.padding = '20px';
+            chartsContainer.style.borderRadius = '8px';
+            
+            rechartContainers.forEach((chart, index) => {
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '20px';
+              wrapper.style.backgroundColor = '#374151';
+              wrapper.style.padding = '16px';
+              wrapper.style.borderRadius = '8px';
+              
+              const title = document.createElement('h3');
+              title.style.color = 'white';
+              title.style.marginBottom = '16px';
+              title.style.fontSize = '16px';
+              title.style.fontWeight = '600';
+              
+              const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
+              title.textContent = titles[index] || `Chart ${index + 1}`;
+              
+              const chartClone = chart.cloneNode(true) as HTMLElement;
+              
+              wrapper.appendChild(title);
+              wrapper.appendChild(chartClone);
+              chartsContainer!.appendChild(wrapper);
+            });
+            
+            document.body.appendChild(chartsContainer);
+          }
         }
       }
       
-      if (!chartsContainer) return;
+      if (!chartsContainer) {
+        console.warn('No charts found for PDF export');
+        return;
+      }
 
       this.checkPageBreak(120);
       
@@ -395,23 +424,33 @@ export class PDFReportGenerator {
       this.pdf.text('Simulation Charts', this.margin, this.yPosition);
       this.yPosition += 15;
 
-      // Wait a moment for charts to render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Additional wait for any dynamic content
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Capture charts as image with better options
       const canvas = await html2canvas(chartsContainer, {
-        scale: 1.2,
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#1f2937', // Match dark theme
+        backgroundColor: '#1f2937',
         width: chartsContainer.scrollWidth,
         height: chartsContainer.scrollHeight,
         logging: false,
+        removeContainer: false,
         onclone: (clonedDoc) => {
-          // Ensure all SVG elements are visible in the clone
+          // Ensure SVG elements render properly
           const svgElements = clonedDoc.querySelectorAll('svg');
           svgElements.forEach(svg => {
             svg.style.backgroundColor = 'transparent';
+            svg.style.display = 'block';
+          });
+          
+          // Ensure text elements are visible
+          const textElements = clonedDoc.querySelectorAll('text');
+          textElements.forEach(text => {
+            if (!text.getAttribute('fill')) {
+              text.setAttribute('fill', '#ffffff');
+            }
           });
         }
       });
@@ -438,7 +477,7 @@ export class PDFReportGenerator {
       
       this.pdf.setFontSize(10);
       this.pdf.setFont('helvetica', 'italic');
-      this.pdf.text('Charts could not be captured. Please ensure simulation has been run and charts are visible.', this.margin, this.yPosition);
+      this.pdf.text('Charts could not be captured. Please run simulation first and ensure charts are visible.', this.margin, this.yPosition);
       this.yPosition += 15;
     }
   }

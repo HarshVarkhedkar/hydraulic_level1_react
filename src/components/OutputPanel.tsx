@@ -67,13 +67,6 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               <Download size={16} />
               Export CSV
             </button>
-            <button
-              onClick={handlePDFExport}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 transform hover:scale-105"
-            >
-              <FileText size={16} />
-              Export PDF
-            </button>
           </div>
         </div>
       )}
