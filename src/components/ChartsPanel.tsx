@@ -45,9 +45,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
   };
 
   return (
-    <div id="charts-container" className="space-y-6">
+    <div id="charts-container" className="space-y-6" data-charts="simulation-charts">
       {/* Flow Chart */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700" data-chart="flow">
         <h3 className="text-white font-semibold mb-4">Flow vs Time</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
@@ -77,7 +77,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
       </div>
 
       {/* Pressure Chart */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700" data-chart="pressure">
         <h3 className="text-white font-semibold mb-4">Pressure vs Time</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
@@ -107,7 +107,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
       </div>
 
       {/* Power Chart */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700" data-chart="power">
         <h3 className="text-white font-semibold mb-4">Power vs Time</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>

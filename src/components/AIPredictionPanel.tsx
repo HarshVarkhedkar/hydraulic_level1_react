@@ -51,6 +51,9 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
 
     setIsGeneratingPDF(true);
     try {
+      // Wait a moment to ensure charts are fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const pdfGenerator = new PDFReportGenerator();
       await pdfGenerator.generateReport({
         inputs,
@@ -63,7 +66,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF report. Please try again.');
+      alert('Failed to generate PDF report. Please ensure simulation has been run and try again.');
     } finally {
       setIsGeneratingPDF(false);
     }

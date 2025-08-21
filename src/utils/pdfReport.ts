@@ -349,7 +349,43 @@ export class PDFReportGenerator {
    */
   private async addCharts(): Promise<void> {
     try {
-      const chartsContainer = document.getElementById('charts-container');
+      // Try multiple selectors to find the charts container
+      let chartsContainer = document.getElementById('charts-container');
+      
+      if (!chartsContainer) {
+        // Fallback: look for the charts panel by class or other identifiers
+        chartsContainer = document.querySelector('[id*="charts"]') as HTMLElement;
+      }
+      
+      if (!chartsContainer) {
+        // Another fallback: look for recharts containers
+        const rechartContainers = document.querySelectorAll('.recharts-wrapper');
+        if (rechartContainers.length > 0) {
+          // Create a temporary container to hold all charts
+          chartsContainer = document.createElement('div');
+          chartsContainer.style.backgroundColor = '#1f2937';
+          chartsContainer.style.padding = '20px';
+          
+          rechartContainers.forEach((chart, index) => {
+            const chartClone = chart.cloneNode(true) as HTMLElement;
+            const title = document.createElement('h3');
+            title.style.color = 'white';
+            title.style.marginBottom = '10px';
+            title.style.fontSize = '16px';
+            
+            // Add appropriate titles based on chart index
+            const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
+            title.textContent = titles[index] || `Chart ${index + 1}`;
+            
+            chartsContainer!.appendChild(title);
+            chartsContainer!.appendChild(chartClone);
+          });
+          
+          // Temporarily add to DOM for capture
+          document.body.appendChild(chartsContainer);
+        }
+      }
+      
       if (!chartsContainer) return;
 
       this.checkPageBreak(120);
@@ -359,12 +395,25 @@ export class PDFReportGenerator {
       this.pdf.text('Simulation Charts', this.margin, this.yPosition);
       this.yPosition += 15;
 
-      // Capture charts as image
+      // Wait a moment for charts to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Capture charts as image with better options
       const canvas = await html2canvas(chartsContainer, {
-        scale: 0.8,
+        scale: 1.2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#1f2937' // Match dark theme
+        backgroundColor: '#1f2937', // Match dark theme
+        width: chartsContainer.scrollWidth,
+        height: chartsContainer.scrollHeight,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Ensure all SVG elements are visible in the clone
+          const svgElements = clonedDoc.querySelectorAll('svg');
+          svgElements.forEach(svg => {
+            svg.style.backgroundColor = 'transparent';
+          });
+        }
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -380,12 +429,16 @@ export class PDFReportGenerator {
       this.pdf.addImage(imgData, 'PNG', this.margin, this.yPosition, imgWidth, imgHeight);
       this.yPosition += imgHeight + 10;
 
+      // Clean up temporary container if we created one
+      if (chartsContainer && chartsContainer.parentElement === document.body) {
+        document.body.removeChild(chartsContainer);
+      }
     } catch (error) {
       console.warn('Could not capture charts for PDF:', error);
       
       this.pdf.setFontSize(10);
       this.pdf.setFont('helvetica', 'italic');
-      this.pdf.text('Charts could not be captured. Please run simulation to generate charts.', this.margin, this.yPosition);
+      this.pdf.text('Charts could not be captured. Please ensure simulation has been run and charts are visible.', this.margin, this.yPosition);
       this.yPosition += 15;
     }
   }
