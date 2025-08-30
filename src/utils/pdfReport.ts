@@ -36,7 +36,7 @@ export class PDFReportGenerator {
       // Input Parameters
       this.addInputParameters(reportData.inputs);
       
-      // Application Calculations
+      // Application Calculations with Phase Details
       this.addApplicationCalculations(reportData.inputs, reportData.steps);
       
       // AI Predictions
@@ -48,8 +48,8 @@ export class PDFReportGenerator {
       // Warnings and Tips
       this.addWarningsAndTips(reportData.warnings, reportData.tips);
       
-      // Charts (if available)
-      await this.addCharts();
+      // Charts (ENHANCED - Multiple strategies)
+      await this.addChartsEnhanced();
       
       // Performance Summary
       this.addPerformanceSummary(reportData.data);
@@ -134,10 +134,10 @@ export class PDFReportGenerator {
   }
 
   /**
-   * Add application calculations section
+   * Add detailed application calculations with phase breakdown
    */
   private addApplicationCalculations(inputs: InputModel, steps: CalculationStep[]): void {
-    this.checkPageBreak(80);
+    this.checkPageBreak(120);
     
     this.pdf.setFontSize(16);
     this.pdf.setFont('helvetica', 'bold');
@@ -152,9 +152,10 @@ export class PDFReportGenerator {
     const pressureDead = HydroCalculator.pressureBar(forceDead, pistonArea);
     const pressureHolding = HydroCalculator.pressureBar(forceHolding, pistonArea);
 
-    const calculations = [
+    const phases = [
       {
-        phase: 'Fast Down Phase',
+        name: 'Fast Down Phase',
+        description: '200 mm stroke at 200 mm/s speed',
         calculations: [
           {
             formula: 'Piston Area = π × (Bore²) / 4',
@@ -162,14 +163,25 @@ export class PDFReportGenerator {
             result: `${(pistonArea * 10000).toFixed(2)} cm²`
           },
           {
+            formula: 'Dead Load Force = Load × g',
+            substituted: `${inputs.deadLoadTon} ton × 9.81`,
+            result: `${forceDead.toFixed(0)} N`
+          },
+          {
             formula: 'Required Pressure = Force / Area',
             substituted: `${forceDead.toFixed(0)} N / ${(pistonArea * 10000).toFixed(2)} cm²`,
             result: `${pressureDead.toFixed(1)} bar`
+          },
+          {
+            formula: 'Flow Rate = Area × Speed',
+            substituted: `${(pistonArea * 10000).toFixed(2)} cm² × 200 mm/s`,
+            result: `${HydroCalculator.flowLpm(pistonArea, 200).toFixed(1)} L/min`
           }
         ]
       },
       {
-        phase: 'Working Phase',
+        name: 'Working Phase',
+        description: '50 mm stroke at 10 mm/s speed',
         calculations: [
           {
             formula: 'Working Force = Load × g',
@@ -180,27 +192,74 @@ export class PDFReportGenerator {
             formula: 'Working Pressure = Force / Area',
             substituted: `${forceHolding.toFixed(0)} N / ${(pistonArea * 10000).toFixed(2)} cm²`,
             result: `${pressureHolding.toFixed(1)} bar`
+          },
+          {
+            formula: 'Working Flow = Area × Speed',
+            substituted: `${(pistonArea * 10000).toFixed(2)} cm² × 10 mm/s`,
+            result: `${HydroCalculator.flowLpm(pistonArea, 10).toFixed(1)} L/min`
+          },
+          {
+            formula: 'Hydraulic Power = P × Q / 600',
+            substituted: `${pressureHolding.toFixed(1)} bar × ${HydroCalculator.flowLpm(pistonArea, 10).toFixed(1)} L/min / 600`,
+            result: `${HydroCalculator.hydraulicPowerKW(pressureHolding, HydroCalculator.flowLpm(pistonArea, 10)).toFixed(2)} kW`
           }
         ]
       },
       {
-        phase: 'Return Phase',
+        name: 'Holding Phase',
+        description: '0 mm stroke, maintain pressure for 2 seconds',
+        calculations: [
+          {
+            formula: 'Holding Pressure = Working Pressure',
+            substituted: `${pressureHolding.toFixed(1)} bar`,
+            result: `${pressureHolding.toFixed(1)} bar`
+          },
+          {
+            formula: 'Flow Rate = 0 (no movement)',
+            substituted: '0 mm/s × Area',
+            result: '0 L/min'
+          },
+          {
+            formula: 'Power = Minimal (leakage compensation)',
+            substituted: 'P × Q_leakage',
+            result: '< 0.5 kW'
+          }
+        ]
+      },
+      {
+        name: 'Fast Up Phase',
+        description: '250 mm stroke at 200 mm/s speed (return)',
         calculations: [
           {
             formula: 'Return Area = π × (Bore² - Rod²) / 4',
             substituted: `π × (${inputs.boreCm}² - ${inputs.rodCm}²) / 4`,
             result: `${(rodArea * 10000).toFixed(2)} cm²`
+          },
+          {
+            formula: 'Return Flow = Return Area × Speed',
+            substituted: `${(rodArea * 10000).toFixed(2)} cm² × 200 mm/s`,
+            result: `${HydroCalculator.flowLpm(rodArea, 200).toFixed(1)} L/min`
+          },
+          {
+            formula: 'Return Pressure = Dead Load / Return Area',
+            substituted: `${forceDead.toFixed(0)} N / ${(rodArea * 10000).toFixed(2)} cm²`,
+            result: `${HydroCalculator.pressureBar(forceDead, rodArea).toFixed(1)} bar`
           }
         ]
       }
     ];
 
-    calculations.forEach(phase => {
-      this.checkPageBreak(30);
+    phases.forEach(phase => {
+      this.checkPageBreak(40);
       
       this.pdf.setFontSize(12);
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.text(`[${phase.phase}]`, this.margin, this.yPosition);
+      this.pdf.text(`[${phase.name}]`, this.margin, this.yPosition);
+      this.yPosition += 6;
+      
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.text(phase.description, this.margin + 5, this.yPosition);
       this.yPosition += 8;
 
       this.pdf.setFontSize(10);
@@ -345,117 +404,154 @@ export class PDFReportGenerator {
   }
 
   /**
-   * Add charts section by capturing DOM elements
+   * ENHANCED chart capture with multiple strategies and better error handling
    */
-  private async addCharts(): Promise<void> {
+  private async addChartsEnhanced(): Promise<void> {
     try {
-      // Wait for charts to be fully rendered
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🔍 Starting enhanced chart capture...');
       
-      // Try multiple strategies to find charts
-      let chartsContainer = document.querySelector('[data-charts="simulation-charts"]') as HTMLElement;
+      // Strategy 1: Wait longer for charts to fully render
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (!chartsContainer) {
-        chartsContainer = document.getElementById('charts-container') as HTMLElement;
+      let chartsContainer: HTMLElement | null = null;
+      let captureStrategy = '';
+      
+      // Strategy 2: Try multiple selectors in order of preference
+      const selectors = [
+        '[data-charts="simulation-charts"]',
+        '#charts-container',
+        '.space-y-6[id*="chart"]',
+        '.bg-gray-800:has(.recharts-wrapper)',
+        '.recharts-wrapper'
+      ];
+      
+      for (const selector of selectors) {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          if (selector === '.recharts-wrapper') {
+            // Create container for multiple charts
+            chartsContainer = this.createChartsContainer(elements);
+            captureStrategy = 'Multiple Recharts';
+          } else {
+            chartsContainer = elements[0] as HTMLElement;
+            captureStrategy = `Selector: ${selector}`;
+          }
+          break;
+        }
       }
       
+      // Strategy 3: Look for any element containing "chart" in class or id
       if (!chartsContainer) {
-        // Look for individual chart containers
-        const chartElements = document.querySelectorAll('[data-chart]');
-        if (chartElements.length > 0) {
-          // Create a temporary container
-          chartsContainer = document.createElement('div');
-          chartsContainer.style.backgroundColor = '#1f2937';
-          chartsContainer.style.padding = '20px';
-          chartsContainer.style.borderRadius = '8px';
+        const allElements = document.querySelectorAll('*');
+        for (const element of allElements) {
+          const className = element.className?.toString().toLowerCase() || '';
+          const id = element.id?.toLowerCase() || '';
           
-          chartElements.forEach((chart) => {
-            const chartClone = chart.cloneNode(true) as HTMLElement;
-            chartsContainer!.appendChild(chartClone);
-          });
-          
-          document.body.appendChild(chartsContainer);
-        } else {
-          // Final fallback: look for recharts containers
-          const rechartContainers = document.querySelectorAll('.recharts-wrapper');
-          if (rechartContainers.length > 0) {
-            chartsContainer = document.createElement('div');
-            chartsContainer.style.backgroundColor = '#1f2937';
-            chartsContainer.style.padding = '20px';
-            chartsContainer.style.borderRadius = '8px';
-            
-            rechartContainers.forEach((chart, index) => {
-              const wrapper = document.createElement('div');
-              wrapper.style.marginBottom = '20px';
-              wrapper.style.backgroundColor = '#374151';
-              wrapper.style.padding = '16px';
-              wrapper.style.borderRadius = '8px';
-              
-              const title = document.createElement('h3');
-              title.style.color = 'white';
-              title.style.marginBottom = '16px';
-              title.style.fontSize = '16px';
-              title.style.fontWeight = '600';
-              
-              const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
-              title.textContent = titles[index] || `Chart ${index + 1}`;
-              
-              const chartClone = chart.cloneNode(true) as HTMLElement;
-              
-              wrapper.appendChild(title);
-              wrapper.appendChild(chartClone);
-              chartsContainer!.appendChild(wrapper);
-            });
-            
-            document.body.appendChild(chartsContainer);
+          if ((className.includes('chart') || id.includes('chart')) && 
+              element.querySelector('.recharts-wrapper')) {
+            chartsContainer = element as HTMLElement;
+            captureStrategy = 'Chart element search';
+            break;
           }
         }
       }
       
+      // Strategy 4: Find parent of recharts elements
       if (!chartsContainer) {
-        console.warn('No charts found for PDF export');
+        const rechartElements = document.querySelectorAll('.recharts-wrapper');
+        if (rechartElements.length > 0) {
+          let parent = rechartElements[0].parentElement;
+          while (parent && parent !== document.body) {
+            if (parent.children.length >= 2) { // Likely contains multiple charts
+              chartsContainer = parent;
+              captureStrategy = 'Parent container';
+              break;
+            }
+            parent = parent.parentElement;
+          }
+        }
+      }
+      
+      // Strategy 5: Create temporary container with all chart elements
+      if (!chartsContainer) {
+        const allChartElements = document.querySelectorAll('.recharts-wrapper, [class*="chart"], [id*="chart"]');
+        if (allChartElements.length > 0) {
+          chartsContainer = this.createChartsContainer(allChartElements);
+          captureStrategy = 'Temporary container';
+        }
+      }
+      
+      if (!chartsContainer) {
+        console.warn('❌ No charts found for PDF export');
+        this.addNoChartsMessage();
         return;
       }
 
-      this.checkPageBreak(120);
+      console.log(`✅ Found charts using: ${captureStrategy}`);
+      
+      this.checkPageBreak(150);
       
       this.pdf.setFontSize(16);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.text('Simulation Charts', this.margin, this.yPosition);
       this.yPosition += 15;
 
-      // Additional wait for any dynamic content
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Additional wait for dynamic content
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Capture charts as image with better options
+      // Enhanced capture options
       const canvas = await html2canvas(chartsContainer, {
-        scale: 1.5,
+        scale: 2, // Higher quality
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#1f2937',
-        width: chartsContainer.scrollWidth,
-        height: chartsContainer.scrollHeight,
+        width: Math.max(chartsContainer.scrollWidth, chartsContainer.offsetWidth),
+        height: Math.max(chartsContainer.scrollHeight, chartsContainer.offsetHeight),
         logging: false,
         removeContainer: false,
+        foreignObjectRendering: true,
         onclone: (clonedDoc) => {
-          // Ensure SVG elements render properly
+          // Ensure all elements are visible
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach(el => {
+            const element = el as HTMLElement;
+            if (element.style) {
+              element.style.visibility = 'visible';
+              element.style.opacity = '1';
+            }
+          });
+          
+          // Fix SVG rendering
           const svgElements = clonedDoc.querySelectorAll('svg');
           svgElements.forEach(svg => {
             svg.style.backgroundColor = 'transparent';
             svg.style.display = 'block';
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
           });
           
-          // Ensure text elements are visible
-          const textElements = clonedDoc.querySelectorAll('text');
+          // Ensure text is visible
+          const textElements = clonedDoc.querySelectorAll('text, .recharts-text');
           textElements.forEach(text => {
-            if (!text.getAttribute('fill')) {
-              text.setAttribute('fill', '#ffffff');
+            const textEl = text as HTMLElement;
+            if (!textEl.getAttribute('fill') && !textEl.style.color) {
+              textEl.setAttribute('fill', '#ffffff');
+              textEl.style.color = '#ffffff';
             }
+          });
+          
+          // Force chart backgrounds
+          const chartContainers = clonedDoc.querySelectorAll('.recharts-wrapper, [class*="chart"]');
+          chartContainers.forEach(container => {
+            const containerEl = container as HTMLElement;
+            containerEl.style.backgroundColor = '#374151';
+            containerEl.style.padding = '16px';
+            containerEl.style.borderRadius = '8px';
+            containerEl.style.marginBottom = '16px';
           });
         }
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const imgWidth = 170;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -465,21 +561,98 @@ export class PDFReportGenerator {
         this.yPosition = 20;
       }
 
-      this.pdf.addImage(imgData, 'PNG', this.margin, this.yPosition, imgWidth, imgHeight);
-      this.yPosition += imgHeight + 10;
+      this.pdf.addImage(imgData, 'PNG', this.margin, this.yPosition, imgWidth, Math.min(imgHeight, 200));
+      this.yPosition += Math.min(imgHeight, 200) + 10;
+
+      console.log(`✅ Charts captured successfully: ${imgWidth}x${imgHeight}px`);
 
       // Clean up temporary container if we created one
-      if (chartsContainer && chartsContainer.parentElement === document.body) {
+      if (chartsContainer && chartsContainer.dataset.temporary === 'true') {
         document.body.removeChild(chartsContainer);
       }
-    } catch (error) {
-      console.warn('Could not capture charts for PDF:', error);
       
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.text('Charts could not be captured. Please run simulation first and ensure charts are visible.', this.margin, this.yPosition);
-      this.yPosition += 15;
+    } catch (error) {
+      console.error('❌ Chart capture failed:', error);
+      this.addChartCaptureError();
     }
+  }
+
+  /**
+   * Create a temporary container for multiple chart elements
+   */
+  private createChartsContainer(elements: NodeListOf<Element> | Element[]): HTMLElement {
+    const container = document.createElement('div');
+    container.style.backgroundColor = '#1f2937';
+    container.style.padding = '20px';
+    container.style.borderRadius = '8px';
+    container.style.position = 'fixed';
+    container.style.top = '-9999px';
+    container.style.left = '-9999px';
+    container.style.width = '800px';
+    container.style.zIndex = '-1000';
+    container.dataset.temporary = 'true';
+    
+    const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
+    
+    Array.from(elements).forEach((element, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.style.backgroundColor = '#374151';
+      wrapper.style.padding = '16px';
+      wrapper.style.borderRadius = '8px';
+      wrapper.style.marginBottom = '20px';
+      
+      const title = document.createElement('h3');
+      title.style.color = '#ffffff';
+      title.style.fontSize = '16px';
+      title.style.fontWeight = '600';
+      title.style.marginBottom = '16px';
+      title.style.fontFamily = 'Arial, sans-serif';
+      title.textContent = titles[index] || `Chart ${index + 1}`;
+      
+      const chartClone = element.cloneNode(true) as HTMLElement;
+      chartClone.style.backgroundColor = 'transparent';
+      
+      wrapper.appendChild(title);
+      wrapper.appendChild(chartClone);
+      container.appendChild(wrapper);
+    });
+    
+    document.body.appendChild(container);
+    return container;
+  }
+
+  /**
+   * Add message when no charts are found
+   */
+  private addNoChartsMessage(): void {
+    this.checkPageBreak(30);
+    
+    this.pdf.setFontSize(16);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text('Simulation Charts', this.margin, this.yPosition);
+    this.yPosition += 15;
+    
+    this.pdf.setFontSize(10);
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.text('Charts not available. Please run simulation first and ensure charts are visible.', this.margin, this.yPosition);
+    this.yPosition += 15;
+  }
+
+  /**
+   * Add chart capture error message
+   */
+  private addChartCaptureError(): void {
+    this.checkPageBreak(30);
+    
+    this.pdf.setFontSize(16);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text('Simulation Charts', this.margin, this.yPosition);
+    this.yPosition += 15;
+    
+    this.pdf.setFontSize(10);
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.text('Chart capture failed. Charts may be loading or not fully rendered.', this.margin, this.yPosition);
+    this.yPosition += 15;
   }
 
   /**

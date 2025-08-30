@@ -59,15 +59,13 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
       {data && (
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <h3 className="text-white font-semibold mb-4">Export Results</h3>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleCSVExport}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all duration-200 transform hover:scale-105"
-            >
-              <Download size={16} />
-              Export CSV
-            </button>
-          </div>
+          <button
+            onClick={handleCSVExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all duration-200 transform hover:scale-105 w-full"
+          >
+            <Download size={16} />
+            Export CSV Data
+          </button>
         </div>
       )}
 
