@@ -1,7 +1,7 @@
 import React from 'react';
 import { ValidationResult, DataPoint, CalculationStep } from '../types/simulator';
 import { ExportUtils } from '../utils/exportUtils';
-import { Download, FileText } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface OutputPanelProps {
   validation: ValidationResult;
@@ -20,12 +20,6 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
     if (data) {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
       ExportUtils.downloadCSV(data, `simulation_results_${timestamp}.csv`);
-    }
-  };
-
-  const handlePDFExport = async () => {
-    if (data) {
-      await ExportUtils.generatePDF(inputs, data, steps, validation.warnings, validation.tips);
     }
   };
 
