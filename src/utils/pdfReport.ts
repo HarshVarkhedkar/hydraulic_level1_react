@@ -408,86 +408,52 @@ export class PDFReportGenerator {
    */
   private async addChartsEnhanced(): Promise<void> {
     try {
-      console.log('🔍 Starting enhanced chart capture...');
+      console.log('🔍 Starting chart capture...');
       
-      // Strategy 1: Wait longer for charts to fully render
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for charts to fully render
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       let chartsContainer: HTMLElement | null = null;
-      let captureStrategy = '';
       
-      // Strategy 2: Try multiple selectors in order of preference
-      const selectors = [
-        '[data-charts="simulation-charts"]',
-        '#charts-container',
-        '.space-y-6[id*="chart"]',
-        '.bg-gray-800:has(.recharts-wrapper)',
-        '.recharts-wrapper'
-      ];
+      // Strategy 1: Look for main charts container
+      chartsContainer = document.getElementById('charts-container');
+      if (chartsContainer) {
+        console.log('✅ Found charts container by ID');
+      }
       
-      for (const selector of selectors) {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          if (selector === '.recharts-wrapper') {
-            // Create container for multiple charts
-            chartsContainer = this.createChartsContainer(elements);
-            captureStrategy = 'Multiple Recharts';
-          } else {
-            chartsContainer = elements[0] as HTMLElement;
-            captureStrategy = `Selector: ${selector}`;
-          }
-          break;
+      // Strategy 2: Look for data attribute
+      if (!chartsContainer) {
+        chartsContainer = document.querySelector('[data-charts="simulation-charts"]') as HTMLElement;
+        if (chartsContainer) {
+          console.log('✅ Found charts container by data attribute');
         }
       }
       
-      // Strategy 3: Look for any element containing "chart" in class or id
+      // Strategy 3: Create container from individual charts
       if (!chartsContainer) {
-        const allElements = document.querySelectorAll('*');
-        for (const element of allElements) {
-          const className = element.className?.toString().toLowerCase() || '';
-          const id = element.id?.toLowerCase() || '';
-          
-          if ((className.includes('chart') || id.includes('chart')) && 
-              element.querySelector('.recharts-wrapper')) {
-            chartsContainer = element as HTMLElement;
-            captureStrategy = 'Chart element search';
-            break;
-          }
+        const chartElements = document.querySelectorAll('[data-chart]');
+        if (chartElements.length > 0) {
+          chartsContainer = this.createChartsContainer(chartElements);
+          console.log('✅ Created container from individual charts');
         }
       }
       
-      // Strategy 4: Find parent of recharts elements
+      // Strategy 4: Look for recharts elements
       if (!chartsContainer) {
-        const rechartElements = document.querySelectorAll('.recharts-wrapper');
-        if (rechartElements.length > 0) {
-          let parent = rechartElements[0].parentElement;
-          while (parent && parent !== document.body) {
-            if (parent.children.length >= 2) { // Likely contains multiple charts
-              chartsContainer = parent;
-              captureStrategy = 'Parent container';
-              break;
-            }
-            parent = parent.parentElement;
-          }
-        }
-      }
-      
-      // Strategy 5: Create temporary container with all chart elements
-      if (!chartsContainer) {
-        const allChartElements = document.querySelectorAll('.recharts-wrapper, [class*="chart"], [id*="chart"]');
-        if (allChartElements.length > 0) {
-          chartsContainer = this.createChartsContainer(allChartElements);
-          captureStrategy = 'Temporary container';
+        const recharts = document.querySelectorAll('.recharts-wrapper');
+        if (recharts.length > 0) {
+          chartsContainer = this.createChartsContainer(recharts);
+          console.log('✅ Created container from recharts elements');
         }
       }
       
       if (!chartsContainer) {
-        console.warn('❌ No charts found for PDF export');
+        console.error('❌ No charts found for PDF export');
         this.addNoChartsMessage();
         return;
       }
 
-      console.log(`✅ Found charts using: ${captureStrategy}`);
+      console.log('📊 Capturing charts...');
       
       this.checkPageBreak(150);
       
@@ -496,21 +462,36 @@ export class PDFReportGenerator {
       this.pdf.text('Simulation Charts', this.margin, this.yPosition);
       this.yPosition += 15;
 
-      // Additional wait for dynamic content
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Additional wait for SVG rendering
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Enhanced capture options
+      // Capture with high quality settings
       const canvas = await html2canvas(chartsContainer, {
-        scale: 2, // Higher quality
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#1f2937',
-        width: Math.max(chartsContainer.scrollWidth, chartsContainer.offsetWidth),
-        height: Math.max(chartsContainer.scrollHeight, chartsContainer.offsetHeight),
+        backgroundColor: '#1f2937', // Dark background
         logging: false,
-        removeContainer: false,
-        foreignObjectRendering: true,
+        width: chartsContainer.scrollWidth || chartsContainer.offsetWidth,
+        height: chartsContainer.scrollHeight || chartsContainer.offsetHeight,
         onclone: (clonedDoc) => {
+          console.log('🔧 Preparing cloned document for capture...');
+          
+          // Ensure SVGs are properly rendered
+          const svgElements = clonedDoc.querySelectorAll('svg');
+          svgElements.forEach(svg => {
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            svg.style.display = 'block';
+          });
+          
+          // Make sure text is visible
+          const textElements = clonedDoc.querySelectorAll('text');
+          textElements.forEach(text => {
+            if (!text.getAttribute('fill')) {
+              text.setAttribute('fill', '#ffffff');
+            }
+          });
+          
           // Ensure all elements are visible
           const allElements = clonedDoc.querySelectorAll('*');
           allElements.forEach(el => {
@@ -520,39 +501,11 @@ export class PDFReportGenerator {
               element.style.opacity = '1';
             }
           });
-          
-          // Fix SVG rendering
-          const svgElements = clonedDoc.querySelectorAll('svg');
-          svgElements.forEach(svg => {
-            svg.style.backgroundColor = 'transparent';
-            svg.style.display = 'block';
-            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-          });
-          
-          // Ensure text is visible
-          const textElements = clonedDoc.querySelectorAll('text, .recharts-text');
-          textElements.forEach(text => {
-            const textEl = text as HTMLElement;
-            if (!textEl.getAttribute('fill') && !textEl.style.color) {
-              textEl.setAttribute('fill', '#ffffff');
-              textEl.style.color = '#ffffff';
-            }
-          });
-          
-          // Force chart backgrounds
-          const chartContainers = clonedDoc.querySelectorAll('.recharts-wrapper, [class*="chart"]');
-          chartContainers.forEach(container => {
-            const containerEl = container as HTMLElement;
-            containerEl.style.backgroundColor = '#374151';
-            containerEl.style.padding = '16px';
-            containerEl.style.borderRadius = '8px';
-            containerEl.style.marginBottom = '16px';
-          });
         }
       });
 
       const imgData = canvas.toDataURL('image/png', 1.0);
-      const imgWidth = 170;
+      const imgWidth = 160;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       // Check if we need a new page for the image
@@ -561,18 +514,18 @@ export class PDFReportGenerator {
         this.yPosition = 20;
       }
 
-      this.pdf.addImage(imgData, 'PNG', this.margin, this.yPosition, imgWidth, Math.min(imgHeight, 200));
-      this.yPosition += Math.min(imgHeight, 200) + 10;
+      this.pdf.addImage(imgData, 'PNG', this.margin, this.yPosition, imgWidth, Math.min(imgHeight, 180));
+      this.yPosition += Math.min(imgHeight, 180) + 10;
 
-      console.log(`✅ Charts captured successfully: ${imgWidth}x${imgHeight}px`);
+      console.log(`✅ Charts captured successfully!`);
 
       // Clean up temporary container if we created one
-      if (chartsContainer && chartsContainer.dataset.temporary === 'true') {
+      if (chartsContainer?.dataset?.temporary === 'true') {
         document.body.removeChild(chartsContainer);
       }
       
     } catch (error) {
-      console.error('❌ Chart capture failed:', error);
+      console.error('❌ Chart capture error:', error);
       this.addChartCaptureError();
     }
   }
@@ -584,15 +537,12 @@ export class PDFReportGenerator {
     const container = document.createElement('div');
     container.style.backgroundColor = '#1f2937';
     container.style.padding = '20px';
-    container.style.borderRadius = '8px';
     container.style.position = 'fixed';
     container.style.top = '-9999px';
     container.style.left = '-9999px';
-    container.style.width = '800px';
+    container.style.width = '900px';
     container.style.zIndex = '-1000';
     container.dataset.temporary = 'true';
-    
-    const titles = ['Flow vs Time', 'Pressure vs Time', 'Power vs Time'];
     
     Array.from(elements).forEach((element, index) => {
       const wrapper = document.createElement('div');
@@ -601,19 +551,9 @@ export class PDFReportGenerator {
       wrapper.style.borderRadius = '8px';
       wrapper.style.marginBottom = '20px';
       
-      const title = document.createElement('h3');
-      title.style.color = '#ffffff';
-      title.style.fontSize = '16px';
-      title.style.fontWeight = '600';
-      title.style.marginBottom = '16px';
-      title.style.fontFamily = 'Arial, sans-serif';
-      title.textContent = titles[index] || `Chart ${index + 1}`;
-      
-      const chartClone = element.cloneNode(true) as HTMLElement;
-      chartClone.style.backgroundColor = 'transparent';
-      
-      wrapper.appendChild(title);
-      wrapper.appendChild(chartClone);
+      // Clone the element
+      const clone = element.cloneNode(true) as HTMLElement;
+      wrapper.appendChild(clone);
       container.appendChild(wrapper);
     });
     

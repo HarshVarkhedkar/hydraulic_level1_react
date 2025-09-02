@@ -18,7 +18,11 @@ interface ChartsPanelProps {
 export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
+      <div 
+        className="bg-gray-800 rounded-lg p-8 border border-gray-700"
+        id="charts-container"
+        data-charts="simulation-charts"
+      >
         <div className="text-center text-gray-400">
           <div className="text-6xl mb-4">📊</div>
           <h3 className="text-xl font-semibold mb-2">No Data to Display</h3>
@@ -46,19 +50,26 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
 
   return (
     <div 
-      id="charts-container" 
-      className="space-y-6" 
+      id="charts-container"
+      className="space-y-6"
       data-charts="simulation-charts"
-      style={{ backgroundColor: '#1f2937', padding: '20px', borderRadius: '8px' }}
+      style={{ 
+        backgroundColor: '#1f2937', 
+        padding: '20px', 
+        borderRadius: '8px',
+        minHeight: '800px',
+        width: '100%'
+      }}
     >
       {/* Flow Chart */}
       <div 
         className="bg-gray-800 rounded-lg p-6 border border-gray-700" 
         data-chart="flow"
         id="flow-chart-container"
+        style={{ backgroundColor: '#374151', marginBottom: '20px' }}
       >
         <h3 className="text-white font-semibold mb-4">Flow vs Time</h3>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
@@ -90,9 +101,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
         className="bg-gray-800 rounded-lg p-6 border border-gray-700" 
         data-chart="pressure"
         id="pressure-chart-container"
+        style={{ backgroundColor: '#374151', marginBottom: '20px' }}
       >
         <h3 className="text-white font-semibold mb-4">Pressure vs Time</h3>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
@@ -124,9 +136,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
         className="bg-gray-800 rounded-lg p-6 border border-gray-700" 
         data-chart="power"
         id="power-chart-container"
+        style={{ backgroundColor: '#374151', marginBottom: '20px' }}
       >
         <h3 className="text-white font-semibold mb-4">Power vs Time</h3>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 

@@ -57,8 +57,8 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
 
     setIsGeneratingPDF(true);
     try {
-      // Wait a moment to ensure charts are fully rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait longer to ensure charts are fully rendered
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const pdfGenerator = new PDFReportGenerator();
       await pdfGenerator.generateReport({
