@@ -32,7 +32,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ inputs, data }) => {
       <h3 className="text-white font-semibold mb-4">System Summary</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Calculated Parameters */}
+        {}
         <div>
           <h4 className="text-blue-300 font-medium mb-3">Calculated Parameters</h4>
           <div className="space-y-2 text-sm">
@@ -59,7 +59,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ inputs, data }) => {
           </div>
         </div>
 
-        {/* Performance Metrics */}
+        {}
         <div>
           <h4 className="text-green-300 font-medium mb-3">Performance Metrics</h4>
           <div className="space-y-2 text-sm">

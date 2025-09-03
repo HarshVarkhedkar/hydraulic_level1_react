@@ -30,17 +30,14 @@ export class ExportUtils {
     const pdf = new jsPDF();
     let yPosition = 20;
 
-    // Title
     pdf.setFontSize(20);
     pdf.text('Hydraulic Press Simulation Report', 20, yPosition);
     yPosition += 20;
 
-    // Date
     pdf.setFontSize(12);
     pdf.text(`Generated: ${new Date().toLocaleString()}`, 20, yPosition);
     yPosition += 20;
 
-    // Inputs
     pdf.setFontSize(14);
     pdf.text('Input Parameters:', 20, yPosition);
     yPosition += 10;
@@ -60,7 +57,6 @@ export class ExportUtils {
     pdf.text(`System Losses: ${inputs.systemLossBar} bar`, 20, yPosition);
     yPosition += 20;
 
-    // Warnings and Tips
     if (warnings.length > 0) {
       pdf.setFontSize(14);
       pdf.text('Warnings:', 20, yPosition);
@@ -85,7 +81,6 @@ export class ExportUtils {
       yPosition += 10;
     }
 
-    // Add new page for calculation steps
     pdf.addPage();
     yPosition = 20;
     pdf.setFontSize(14);
@@ -106,7 +101,6 @@ export class ExportUtils {
       yPosition += 12;
     });
 
-    // Try to capture charts if they exist
     try {
       const chartsContainer = document.getElementById('charts-container');
       if (chartsContainer) {

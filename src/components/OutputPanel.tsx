@@ -31,7 +31,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Warnings */}
+      {}
       {validation.warnings.length > 0 && (
         <div className="bg-amber-900 border border-amber-600 rounded-lg p-4">
           <h3 className="text-amber-300 font-semibold mb-2">Warnings</h3>
@@ -43,7 +43,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
         </div>
       )}
 
-      {/* Tips */}
+      {}
       {validation.tips.length > 0 && (
         <div className="bg-green-900 border border-green-600 rounded-lg p-4">
           <h3 className="text-green-300 font-semibold mb-2">Optimization Tips</h3>
@@ -55,7 +55,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
         </div>
       )}
 
-      {/* Export Buttons */}
+      {}
       {data && (
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <h3 className="text-white font-semibold mb-4">Export Results</h3>
@@ -71,7 +71,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
         </div>
       )}
 
-      {/* Calculation Steps */}
+      {}
       {steps.length > 0 && (
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <h3 className="text-white font-semibold mb-4">Calculation Steps</h3>

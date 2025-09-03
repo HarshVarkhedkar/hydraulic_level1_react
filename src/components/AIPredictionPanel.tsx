@@ -51,8 +51,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
 
     setIsGeneratingPDF(true);
     try {
-      // Wait a moment to ensure charts are fully rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const pdfGenerator = new PDFReportGenerator();
       await pdfGenerator.generateReport({
@@ -150,10 +149,10 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Brain className="text-purple-400" size={20} />
-          <h3 className="text-white font-semibold">AI Predictions & Suggestions</h3>
+          <h3 className="text-white font-semibold">Predictions & Suggestions</h3>
         </div>
         
-        {/* PDF Export Button */}
+        {}
         <button
           onClick={handleGeneratePDF}
           disabled={isGeneratingPDF}
@@ -166,21 +165,21 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
             </>
           ) : (
             <>
-              <FileText size={14} />
+              <FileText size={12} />
               Generate Report
             </>
           )}
         </button>
       </div>
 
-      {/* Coefficient Source Indicator */}
+      {}
       <div className="mb-4 p-2 bg-gray-700 rounded text-xs">
         <span className="text-gray-400">
           Model: {MLModel.getCoefficientsSource() === 'api' ? '🌐 Live API' : '📁 Local Fallback'}
         </span>
       </div>
 
-      {/* Predictions Section */}
+      {}
       <div className="mb-6">
         <h4 className="text-purple-300 font-medium mb-3">Predicted Performance</h4>
         <div className="grid grid-cols-1 gap-3">
@@ -223,53 +222,73 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         </div>
       </div>
 
-      {/* Suggestions Section */}
-      {suggestions.length > 0 && (
-        <div className="mb-6">
-          <h4 className="text-blue-300 font-medium mb-3">Optimization Suggestions</h4>
-          <div className="space-y-3">
-            {suggestions.map((suggestion, index) => (
-              <div key={index} className="bg-gray-700 rounded p-3">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp size={14} className="text-blue-400 mt-0.5" />
-                    <span className="text-white font-medium text-sm">
-                      {formatParameterName(suggestion.parameter)}
-                    </span>
-                    {suggestion.outOfRange && (
-                      <AlertTriangle size={12} className="text-amber-400" />
-                    )}
-                  </div>
-                  {getConfidenceIcon(suggestion.confidence)}
-                </div>
-                
-                <div className="text-xs text-gray-300 space-y-1">
-                  <div>
-                    Current: {formatParameterValue(suggestion.parameter, suggestion.currentValue)} {formatParameterUnit(suggestion.parameter)}
-                  </div>
-                  <div>
-                    Suggested: {formatParameterValue(suggestion.parameter, suggestion.suggestedValue)} {formatParameterUnit(suggestion.parameter)}
-                    <span className={`ml-2 ${suggestion.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      ({suggestion.change > 0 ? '+' : ''}{suggestion.parameter === 'pumpEfficiency' ? (suggestion.change * 100).toFixed(1) + '%' : suggestion.change.toFixed(1)})
-                    </span>
-                  </div>
-                  <div className="text-blue-300">
-                    → {suggestion.impact}
-                  </div>
-                  {suggestion.outOfRange && (
-                    <div className="text-amber-400 flex items-center gap-1">
-                      <AlertTriangle size={10} />
-                      Outside recommended range
-                    </div>
-                  )}
-                </div>
+         {}
+{suggestions.length > 0 && (
+  <div className="mb-6">
+    <h4 className="text-blue-300 font-medium mb-3">Optimization Suggestions</h4>
+    <div className="space-y-3">
+      {suggestions
+        .filter(
+          (s) => s.parameter === "motorRpm" || s.parameter === "pumpEfficiency"
+        )
+        .map((suggestion, index) => (
+          <div key={index} className="bg-gray-700 rounded p-3">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={14} className="text-blue-400 mt-0.5" />
+                <span className="text-white font-medium text-sm">
+                  {formatParameterName(suggestion.parameter)}
+                </span>
+                {suggestion.outOfRange && (
+                  <AlertTriangle size={12} className="text-amber-400" />
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              {getConfidenceIcon(suggestion.confidence)}
+            </div>
 
-      {/* Goal Configuration */}
+            <div className="text-xs text-gray-300 space-y-1">
+              <div>
+                Current:{" "}
+                {formatParameterValue(
+                  suggestion.parameter,
+                  suggestion.currentValue
+                )}{" "}
+                {formatParameterUnit(suggestion.parameter)}
+              </div>
+              <div>
+                Suggested:{" "}
+                {formatParameterValue(
+                  suggestion.parameter,
+                  suggestion.suggestedValue
+                )}{" "}
+                {formatParameterUnit(suggestion.parameter)}
+                <span
+                  className={`ml-2 ${
+                    suggestion.change > 0
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  ({suggestion.change > 0 ? "+" : ""}
+                  {suggestion.parameter === "pumpEfficiency"
+                    ? (suggestion.change * 100).toFixed(1) + "%"
+                    : suggestion.change.toFixed(1)})
+                </span>
+              </div>
+              <div className="text-blue-300">→ {suggestion.impact}</div>
+              {suggestion.outOfRange && (
+                <div className="text-amber-400 flex items-center gap-1">
+                  <AlertTriangle size={10} />
+                  Outside recommended range
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+      {/* {}
       <div className="mb-4 p-3 bg-gray-900 rounded border border-gray-600">
         <h5 className="text-gray-300 font-medium text-sm mb-2">Current Goal</h5>
         <div className="text-xs text-gray-400">
@@ -286,15 +305,10 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
             <div>• No specific optimization goal set</div>
           )}
         </div>
-      </div>
+      </div> */}
 
-      {/* Disclaimer */}
-      <div className="p-3 bg-gray-900 rounded border border-gray-600">
-        <p className="text-xs text-gray-400">
-          <span className="font-medium">Note:</span> Predictions based on regression analysis with sensitivity calculations. 
-          Always validate suggestions with full simulation before implementation. PDF report includes detailed calculations and charts.
-        </p>
-      </div>
+      {}
+     
     </div>
   );
 };

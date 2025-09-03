@@ -41,7 +41,6 @@ function App() {
 
     setIsRunning(true);
     
-    // Add small delay to show loading state
     await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
@@ -93,9 +92,9 @@ function App() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Mobile/Desktop Layout */}
+        {}
         <div className="lg:hidden mb-6">
-          {/* Mobile Tab Navigation */}
+          {}
           <div className="flex space-x-2 mb-6">
             <TabButton 
               tab="inputs" 
@@ -117,7 +116,7 @@ function App() {
             />
           </div>
 
-          {/* Mobile Content */}
+          {}
           <div className="space-y-6">
             {activeTab === 'inputs' && (
               <>
@@ -153,9 +152,9 @@ function App() {
           </div>
         </div>
 
-        {/* Desktop Layout */}
+        {}
         <div className="hidden lg:grid lg:grid-cols-12 lg:gap-8">
-          {/* Left Sidebar - Inputs */}
+          {}
           <div className="lg:col-span-3 space-y-6">
             <InputPanel
               inputs={inputs}
@@ -172,12 +171,12 @@ function App() {
             />
           </div>
 
-          {/* Main Content - Charts */}
+          {}
           <div className="lg:col-span-6">
             <ChartsPanel data={simulationData} />
           </div>
 
-          {/* Right Sidebar - Summary */}
+          {}
           <div className="lg:col-span-3">
             <div className="space-y-6">
             {simulationData && (
@@ -196,7 +195,7 @@ function App() {
         </div>
       </div>
 
-      {/* Footer */}
+      {}
       <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-16">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
           <p>Hydraulic Press Simulator - Professional Engineering Analysis Tool</p>

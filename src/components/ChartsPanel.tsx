@@ -76,7 +76,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Pressure Chart */}
+      {}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700" data-chart="pressure">
         <h3 className="text-white font-semibold mb-4">Pressure vs Time</h3>
         <ResponsiveContainer width="100%" height={250}>
@@ -106,7 +106,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ data }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Power Chart */}
+      {}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700" data-chart="power">
         <h3 className="text-white font-semibold mb-4">Power vs Time</h3>
         <ResponsiveContainer width="100%" height={250}>

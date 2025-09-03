@@ -65,7 +65,6 @@ export class MLModel {
   private static coefficients: RegressionCoefficients | null = null;
   private static isLoading = false;
 
-  // Fallback coefficients (placeholders to be replaced with real ones)
   private static readonly FALLBACK_COEFFS: RegressionCoefficients = {
     pressure: {
       intercept: 45.2,
@@ -104,22 +103,18 @@ export class MLModel {
     }
   };
 
-  /**
-   * Fetch regression coefficients from API with fallback to local coefficients
-   */
+
   static async loadCoefficients(): Promise<void> {
     if (this.coefficients || this.isLoading) return;
     
     this.isLoading = true;
     
     try {
-      // Try to fetch from API endpoint
       const response = await fetch('/api/ml-coefficients', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Add timeout to prevent hanging
         signal: AbortSignal.timeout(5000)
       });
 
@@ -138,9 +133,7 @@ export class MLModel {
     }
   }
 
-  /**
-   * Validate that coefficients have the expected structure
-   */
+
   private static validateCoefficients(coeffs: any): boolean {
     try {
       return (
@@ -155,9 +148,7 @@ export class MLModel {
     }
   }
 
-  /**
-   * Get current coefficients, loading them if necessary
-   */
+
   private static async getCoefficients(): Promise<RegressionCoefficients> {
     if (!this.coefficients) {
       await this.loadCoefficients();
@@ -165,9 +156,7 @@ export class MLModel {
     return this.coefficients || this.FALLBACK_COEFFS;
   }
 
-  /**
-   * Predict system performance based on input parameters
-   */
+ 
   static async predict(inputs: InputModel): Promise<PredictionResult> {
     const coeffs = await this.getCoefficients();
 
@@ -175,7 +164,6 @@ export class MLModel {
     const efficiency = this.calculateEfficiency(inputs, coeffs.efficiency);
     const cycleTime = this.calculateCycleTime(inputs, coeffs.cycleTime);
 
-    // Calculate overall confidence based on R² values
     const avgRSquared = (coeffs.rSquared.pressure + coeffs.rSquared.efficiency + coeffs.rSquared.cycleTime) / 3;
     const confidence = this.getConfidenceLevel(avgRSquared);
 
@@ -187,20 +175,16 @@ export class MLModel {
     };
   }
 
-  /**
-   * Suggest parameter improvements to achieve specified goals
-   */
+
   static async suggestImprovements(inputs: InputModel, goal: Goal): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
     const coeffs = await this.getCoefficients();
     const currentPrediction = await this.predict(inputs);
 
-    // Handle cycle time reduction goal
     if (goal.targetCycleTimePct) {
       const targetCycleTime = currentPrediction.cycleTime * (1 + goal.targetCycleTimePct / 100);
       const cycleTimeDiff = targetCycleTime - currentPrediction.cycleTime;
 
-      // Suggest bore diameter changes
       const boreSensitivity = await this.calculateSensitivity(inputs, 'boreCm', 'cycleTime');
       if (Math.abs(boreSensitivity) > 0.001) {
         const boreChange = cycleTimeDiff / boreSensitivity;
@@ -217,7 +201,6 @@ export class MLModel {
         });
       }
 
-      // Suggest motor RPM changes
       const rpmSensitivity = await this.calculateSensitivity(inputs, 'motorRpm', 'cycleTime');
       if (Math.abs(rpmSensitivity) > 0.00001) {
         const rpmChange = cycleTimeDiff / rpmSensitivity;
@@ -234,7 +217,6 @@ export class MLModel {
         });
       }
 
-      // Suggest rod diameter changes
       const rodSensitivity = await this.calculateSensitivity(inputs, 'rodCm', 'cycleTime');
       if (Math.abs(rodSensitivity) > 0.001) {
         const rodChange = cycleTimeDiff / rodSensitivity;
@@ -251,7 +233,6 @@ export class MLModel {
         });
       }
 
-      // Suggest pump efficiency changes
       const effSensitivity = await this.calculateSensitivity(inputs, 'pumpEfficiency', 'cycleTime');
       if (Math.abs(effSensitivity) > 0.001) {
         const effChange = cycleTimeDiff / effSensitivity;
@@ -269,12 +250,10 @@ export class MLModel {
       }
     }
 
-    // Handle pressure reduction goal
     if (goal.targetMaxPressurePct) {
       const targetPressure = currentPrediction.maxPressure * (1 + goal.targetMaxPressurePct / 100);
       const pressureDiff = targetPressure - currentPrediction.maxPressure;
 
-      // Suggest bore diameter changes for pressure
       const boreSensitivity = await this.calculateSensitivity(inputs, 'boreCm', 'maxPressure');
       if (Math.abs(boreSensitivity) > 0.001) {
         const boreChange = pressureDiff / boreSensitivity;
@@ -292,12 +271,10 @@ export class MLModel {
       }
     }
 
-    // Handle efficiency improvement goal
     if (goal.targetEfficiencyPct) {
       const targetEfficiency = currentPrediction.efficiency * (1 + goal.targetEfficiencyPct / 100);
       const efficiencyDiff = targetEfficiency - currentPrediction.efficiency;
 
-      // Suggest pump efficiency changes
       const pumpEffSensitivity = await this.calculateSensitivity(inputs, 'pumpEfficiency', 'efficiency');
       if (Math.abs(pumpEffSensitivity) > 0.001) {
         const pumpEffChange = efficiencyDiff / pumpEffSensitivity;
@@ -315,12 +292,10 @@ export class MLModel {
       }
     }
 
-    return suggestions.slice(0, 4); // Limit to 4 suggestions
+    return suggestions.slice(0, 4);
   }
 
-  /**
-   * Calculate pressure using regression coefficients
-   */
+
   private static calculatePressure(inputs: InputModel, coeffs: any): number {
     return coeffs.intercept +
            coeffs.boreCm * inputs.boreCm +

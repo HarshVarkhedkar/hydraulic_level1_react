@@ -6,7 +6,6 @@ export class ValidationUtils {
     const tips: string[] = [];
     let isValid = true;
 
-    // Check required fields
     const requiredFields = ['boreCm', 'rodCm', 'deadLoadTon', 'holdingLoadTon', 'motorRpm', 'pumpEfficiency', 'systemLossBar'];
     for (const field of requiredFields) {
       if (!input[field as keyof InputModel] || input[field as keyof InputModel] === 0) {
@@ -19,7 +18,6 @@ export class ValidationUtils {
       return { isValid, warnings, tips };
     }
 
-    // Warnings for exceeding limits
     if (input.boreCm! > 8.5) {
       warnings.push('Bore exceeds recommended 8.5 cm');
     }
@@ -34,7 +32,6 @@ export class ValidationUtils {
       isValid = false;
     }
 
-    // Tips for optimization
     if (input.pumpEfficiency! < 0.85) {
       tips.push('Consider upgrading pump for higher efficiency (>85%)');
     }
