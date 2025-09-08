@@ -9,6 +9,10 @@ import { ChartsPanel } from './components/ChartsPanel';
 import { SummaryPanel } from './components/SummaryPanel';
 import { AIPredictionPanel } from './components/AIPredictionPanel';
 
+// ✅ new imports
+import { EnergyPanel } from './components/EnergyPanel';
+import { SensorControlPanel } from './components/SensorControlPanel';
+
 function App() {
   const [inputs, setInputs] = useState<Partial<InputModel>>({
     boreCm: 6.5,
@@ -17,13 +21,13 @@ function App() {
     holdingLoadTon: 8.0,
     motorRpm: 1800,
     pumpEfficiency: 0.9,
-    systemLossBar: 5.0
+    systemLossBar: 5.0,
   });
 
   const [validation, setValidation] = useState<ValidationResult>({
     isValid: false,
     warnings: [],
-    tips: []
+    tips: [],
   });
 
   const [simulationData, setSimulationData] = useState<DataPoint[] | null>(null);
@@ -40,13 +44,13 @@ function App() {
     if (!validation.isValid) return;
 
     setIsRunning(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
       const simulator = new Simulator(inputs as InputModel);
       const result = simulator.runSimulation();
-      
+
       setSimulationData(result.data);
       setCalculationSteps(result.steps);
       setActiveTab('charts');
@@ -57,16 +61,16 @@ function App() {
     }
   };
 
-  const TabButton = ({ 
-    tab, 
-    icon: Icon, 
-    label, 
-    isActive 
-  }: { 
-    tab: 'inputs' | 'charts' | 'summary', 
-    icon: any, 
-    label: string, 
-    isActive: boolean 
+  const TabButton = ({
+    tab,
+    icon: Icon,
+    label,
+    isActive,
+  }: {
+    tab: 'inputs' | 'charts' | 'summary';
+    icon: any;
+    label: string;
+    isActive: boolean;
   }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -87,36 +91,36 @@ function App() {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl font-bold text-white">Hydraulic Press Simulator</h1>
-          <p className="text-gray-400 mt-1">Advanced hydraulic system simulation and analysis</p>
+          <p className="text-gray-400 mt-1">
+            Advanced hydraulic system simulation and analysis
+          </p>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {}
+        {/* Mobile layout */}
         <div className="lg:hidden mb-6">
-          {}
           <div className="flex space-x-2 mb-6">
-            <TabButton 
-              tab="inputs" 
-              icon={Settings} 
-              label="Setup" 
-              isActive={activeTab === 'inputs'} 
+            <TabButton
+              tab="inputs"
+              icon={Settings}
+              label="Setup"
+              isActive={activeTab === 'inputs'}
             />
-            <TabButton 
-              tab="charts" 
-              icon={BarChart3} 
-              label="Charts" 
-              isActive={activeTab === 'charts'} 
+            <TabButton
+              tab="charts"
+              icon={BarChart3}
+              label="Charts"
+              isActive={activeTab === 'charts'}
             />
-            <TabButton 
-              tab="summary" 
-              icon={Activity} 
-              label="Summary" 
-              isActive={activeTab === 'summary'} 
+            <TabButton
+              tab="summary"
+              icon={Activity}
+              label="Summary"
+              isActive={activeTab === 'summary'}
             />
           </div>
 
-          {}
           <div className="space-y-6">
             {activeTab === 'inputs' && (
               <>
@@ -135,26 +139,34 @@ function App() {
                 />
               </>
             )}
-            {activeTab === 'charts' && <ChartsPanel data={simulationData} />}
-            {activeTab === 'summary' && simulationData && (
-              <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
+            {activeTab === 'charts' && (
+              <>
+                <ChartsPanel data={simulationData} />
+                <EnergyPanel data={simulationData} /> {/* ✅ new */}
+              </>
             )}
             {activeTab === 'summary' && (
-              <AIPredictionPanel
-                inputs={inputs as InputModel}
-                goal={{ targetCycleTimePct: -10 }}
-                data={simulationData}
-                steps={calculationSteps}
-                warnings={validation.warnings}
-                tips={validation.tips}
-              />
+              <>
+                {simulationData && (
+                  <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
+                )}
+                <AIPredictionPanel
+                  inputs={inputs as InputModel}
+                  goal={{ targetCycleTimePct: -10 }}
+                  data={simulationData}
+                  steps={calculationSteps}
+                  warnings={validation.warnings}
+                  tips={validation.tips}
+                />
+                <SensorControlPanel /> {/* ✅ new */}
+              </>
             )}
           </div>
         </div>
 
-        {}
+        {/* Desktop layout */}
         <div className="hidden lg:grid lg:grid-cols-12 lg:gap-8">
-          {}
+          {/* Left sidebar */}
           <div className="lg:col-span-3 space-y-6">
             <InputPanel
               inputs={inputs}
@@ -171,14 +183,14 @@ function App() {
             />
           </div>
 
-          {}
-          <div className="lg:col-span-6">
+          {/* Center charts */}
+          <div className="lg:col-span-6 space-y-6">
             <ChartsPanel data={simulationData} />
+            <EnergyPanel data={simulationData} /> {/* ✅ new */}
           </div>
 
-          {}
-          <div className="lg:col-span-3">
-            <div className="space-y-6">
+          {/* Right sidebar */}
+          <div className="lg:col-span-3 space-y-6">
             {simulationData && (
               <SummaryPanel inputs={inputs as InputModel} data={simulationData} />
             )}
@@ -190,12 +202,12 @@ function App() {
               warnings={validation.warnings}
               tips={validation.tips}
             />
-            </div>
+            <SensorControlPanel /> {/* ✅ new */}
           </div>
         </div>
       </div>
 
-      {}
+      {/* Footer */}
       <footer className="bg-gray-800 border-t border-gray-700 px-6 py-4 mt-16">
         <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
           <p>Hydraulic Press Simulator - Professional Engineering Analysis Tool</p>

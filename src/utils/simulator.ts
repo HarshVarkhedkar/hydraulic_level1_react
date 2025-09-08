@@ -1,4 +1,5 @@
-import { InputModel, DataPoint, CalculationStep } from '../types/simulator';
+// src/utils/simulator.ts
+import { InputModel, DataPoint, CalculationStep, Phase } from '../types/simulator';
 import { HydroCalculator } from './hydraulicCalculator';
 
 export class Simulator {
@@ -37,7 +38,12 @@ export class Simulator {
       calculation: "200 mm/s speed, 200 mm stroke, 1 second duration",
       result: "High flow, low pressure"
     });
-    time = this.simulatePhase(data, time, strokePos, 200, 200, 1, this.input.deadLoadTon, this.pistonArea);
+    time = this.simulatePhase(
+      data, time, strokePos,
+      200, 200, 1,
+      this.input.deadLoadTon, this.pistonArea,
+      "FastDown"
+    );
     strokePos += 200;
 
     // Phase 2: Working
@@ -46,7 +52,12 @@ export class Simulator {
       calculation: "10 mm/s speed, 50 mm stroke, 5 seconds duration",
       result: "Low flow, high pressure"
     });
-    time = this.simulatePhase(data, time, strokePos, 10, 50, 5, this.input.holdingLoadTon, this.pistonArea);
+    time = this.simulatePhase(
+      data, time, strokePos,
+      10, 50, 5,
+      this.input.holdingLoadTon, this.pistonArea,
+      "Working"
+    );
     strokePos += 50;
 
     // Phase 3: Holding
@@ -55,7 +66,12 @@ export class Simulator {
       calculation: "0 mm/s speed, 0 mm stroke, 2 seconds duration",
       result: "No flow, maintain pressure"
     });
-    time = this.simulatePhase(data, time, strokePos, 0, 0, 2, this.input.holdingLoadTon, this.pistonArea);
+    time = this.simulatePhase(
+      data, time, strokePos,
+      0, 0, 2,
+      this.input.holdingLoadTon, this.pistonArea,
+      "Holding"
+    );
 
     // Phase 4: Fast Up
     this.calculationSteps.push({
@@ -63,7 +79,12 @@ export class Simulator {
       calculation: "200 mm/s speed, 250 mm stroke, 1.25 seconds duration",
       result: "High flow, reduced pressure"
     });
-    time = this.simulatePhase(data, time, strokePos, 200, 250, 1.25, this.input.deadLoadTon, this.rodArea);
+    time = this.simulatePhase(
+      data, time, strokePos,
+      200, 250, 1.25,
+      this.input.deadLoadTon, this.rodArea,
+      "FastUp"
+    );
 
     return { data, steps: this.calculationSteps };
   }
@@ -76,7 +97,8 @@ export class Simulator {
     strokeMm: number,
     durationSec: number,
     loadTon: number,
-    area: number
+    area: number,
+    phase: Phase
   ): number {
     let t = startTime;
     const dt = 0.01; // 10 ms step
@@ -98,7 +120,8 @@ export class Simulator {
         pressureBar: Number(pressureBar.toFixed(2)),
         hydPowerKW: Number(hydKW.toFixed(2)),
         pumpPowerKW: Number(pumpKW.toFixed(2)),
-        actuatorPowerKW: Number(actKW.toFixed(2))
+        actuatorPowerKW: Number(actKW.toFixed(2)),
+        phase // <-- tag datapoint with current phase
       });
 
       strokePos += speedMmSec * dt;

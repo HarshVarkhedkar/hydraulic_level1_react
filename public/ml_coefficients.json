@@ -1,0 +1,70 @@
+{
+  "health": {
+    "type": "classification",
+    "features": [
+      "pressureBar",
+      "temperatureC",
+      "vibration",
+      "flowLpm"
+    ],
+    "scaler": {
+      "mean": {
+        "pressureBar": 161.268166738568,
+        "temperatureC": 45.77480534943917,
+        "vibration": 0.6196427811331607,
+        "flowLpm": 5.979272203048605
+      },
+      "scale": {
+        "pressureBar": 5.456026376313598,
+        "temperatureC": 8.327760869653515,
+        "vibration": 0.06735194055270466,
+        "flowLpm": 1.2028793985297936
+      }
+    },
+    "classes": [
+      "Fault",
+      "Warning"
+    ],
+    "intercept": [
+      2.6142096797538867
+    ],
+    "coef": [
+      [
+        -1.479023798506707,
+        1.1279772635098324,
+        0.7198670314550263,
+        4.3382002063152365
+      ]
+    ]
+  },
+  "efficiency": {
+    "type": "regression",
+    "features": [
+      "pressureBar",
+      "temperatureC",
+      "vibration",
+      "flowLpm"
+    ],
+    "scaler": {
+      "mean": {
+        "pressureBar": 161.268166738568,
+        "temperatureC": 45.77480534943917,
+        "vibration": 0.6196427811331607,
+        "flowLpm": 5.979272203048605
+      },
+      "scale": {
+        "pressureBar": 5.456026376313598,
+        "temperatureC": 8.327760869653515,
+        "vibration": 0.06735194055270466,
+        "flowLpm": 1.2028793985297936
+      }
+    },
+    "intercept": 53.16925707506471,
+    "coef": [
+      1.4319584161576533,
+      1.5047618613411835,
+      -0.0944523888879254,
+      12.443929130708321
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, AlertTriangle, CheckCircle, FileText, Download } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, CheckCircle, FileText } from 'lucide-react';
 import { InputModel, DataPoint, CalculationStep } from '../types/simulator';
 import { MLModel, Goal, PredictionResult, Suggestion } from '../utils/mlModel';
 import { PDFReportGenerator } from '../utils/pdfReport';
@@ -37,7 +37,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         setPrediction(predictionResult);
         setSuggestions(suggestionResults);
       } catch (error) {
-        console.error('Error updating predictions:', error);
+        console.error('❌ Error updating predictions:', error);
       } finally {
         setIsLoading(false);
       }
@@ -51,7 +51,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
 
     setIsGeneratingPDF(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const pdfGenerator = new PDFReportGenerator();
       await pdfGenerator.generateReport({
@@ -64,7 +64,7 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         tips
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('❌ Error generating PDF:', error);
       alert('Failed to generate PDF report. Please ensure simulation has been run and try again.');
     } finally {
       setIsGeneratingPDF(false);
@@ -84,6 +84,22 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
       case 'high': return <CheckCircle size={14} className="text-green-400" />;
       case 'medium': return <TrendingUp size={14} className="text-yellow-400" />;
       case 'low': return <AlertTriangle size={14} className="text-red-400" />;
+    }
+  };
+
+  const getStatusStyle = (status: 'Normal' | 'Warning' | 'Critical') => {
+    switch (status) {
+      case 'Normal': return 'text-green-400';
+      case 'Warning': return 'text-yellow-400';
+      case 'Critical': return 'text-red-400';
+    }
+  };
+
+  const getStatusIcon = (status: 'Normal' | 'Warning' | 'Critical') => {
+    switch (status) {
+      case 'Normal': return <CheckCircle size={14} className="text-green-400" />;
+      case 'Warning': return <AlertTriangle size={14} className="text-yellow-400" />;
+      case 'Critical': return <AlertTriangle size={14} className="text-red-400" />;
     }
   };
 
@@ -146,13 +162,12 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      {/* Header with Generate PDF */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Brain className="text-purple-400" size={20} />
           <h3 className="text-white font-semibold">Predictions & Suggestions</h3>
         </div>
-        
-        {}
         <button
           onClick={handleGeneratePDF}
           disabled={isGeneratingPDF}
@@ -172,14 +187,14 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         </button>
       </div>
 
-      {}
+      {/* Model Source Info */}
       <div className="mb-4 p-2 bg-gray-700 rounded text-xs">
         <span className="text-gray-400">
-          Model: {MLModel.getCoefficientsSource() === 'api' ? '🌐 Live API' : '📁 Local Fallback'}
+         Model Source: {MLModel.getCoefficientsSource() === 'json' ? '🌐 Trained Model' : '📁 Fallback Coefficients'}
         </span>
       </div>
 
-      {}
+      {/* Predictions Section */}
       <div className="mb-6">
         <h4 className="text-purple-300 font-medium mb-3">Predicted Performance</h4>
         <div className="grid grid-cols-1 gap-3">
@@ -212,6 +227,19 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Classification Status */}
+          <div className="bg-gray-700 rounded p-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300 text-sm">System Status</span>
+              <div className="flex items-center gap-2">
+                <span className={`font-medium ${getStatusStyle(prediction.status)}`}>
+                  {prediction.status}
+                </span>
+                {getStatusIcon(prediction.status)}
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="mt-3 flex items-center gap-2">
@@ -222,93 +250,53 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         </div>
       </div>
 
-         {}
-{suggestions.length > 0 && (
-  <div className="mb-6">
-    <h4 className="text-blue-300 font-medium mb-3">Optimization Suggestions</h4>
-    <div className="space-y-3">
-      {suggestions
-        .filter(
-          (s) => s.parameter === "motorRpm" || s.parameter === "pumpEfficiency"
-        )
-        .map((suggestion, index) => (
-          <div key={index} className="bg-gray-700 rounded p-3">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={14} className="text-blue-400 mt-0.5" />
-                <span className="text-white font-medium text-sm">
-                  {formatParameterName(suggestion.parameter)}
-                </span>
-                {suggestion.outOfRange && (
-                  <AlertTriangle size={12} className="text-amber-400" />
-                )}
-              </div>
-              {getConfidenceIcon(suggestion.confidence)}
-            </div>
-
-            <div className="text-xs text-gray-300 space-y-1">
-              <div>
-                Current:{" "}
-                {formatParameterValue(
-                  suggestion.parameter,
-                  suggestion.currentValue
-                )}{" "}
-                {formatParameterUnit(suggestion.parameter)}
-              </div>
-              <div>
-                Suggested:{" "}
-                {formatParameterValue(
-                  suggestion.parameter,
-                  suggestion.suggestedValue
-                )}{" "}
-                {formatParameterUnit(suggestion.parameter)}
-                <span
-                  className={`ml-2 ${
-                    suggestion.change > 0
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}
-                >
-                  ({suggestion.change > 0 ? "+" : ""}
-                  {suggestion.parameter === "pumpEfficiency"
-                    ? (suggestion.change * 100).toFixed(1) + "%"
-                    : suggestion.change.toFixed(1)})
-                </span>
-              </div>
-              <div className="text-blue-300">→ {suggestion.impact}</div>
-              {suggestion.outOfRange && (
-                <div className="text-amber-400 flex items-center gap-1">
-                  <AlertTriangle size={10} />
-                  Outside recommended range
+      {/* Suggestions Section */}
+      {suggestions.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-blue-300 font-medium mb-3">Optimization Suggestions</h4>
+          <div className="space-y-3">
+            {suggestions.map((suggestion, index) => (
+              <div key={index} className="bg-gray-700 rounded p-3">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp size={14} className="text-blue-400 mt-0.5" />
+                    <span className="text-white font-medium text-sm">
+                      {formatParameterName(suggestion.parameter)}
+                    </span>
+                    {suggestion.outOfRange && (
+                      <AlertTriangle size={12} className="text-amber-400" />
+                    )}
+                  </div>
+                  {getConfidenceIcon(suggestion.confidence)}
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-    </div>
-  </div>
-)}
-      {/* {}
-      <div className="mb-4 p-3 bg-gray-900 rounded border border-gray-600">
-        <h5 className="text-gray-300 font-medium text-sm mb-2">Current Goal</h5>
-        <div className="text-xs text-gray-400">
-          {goal.targetCycleTimePct && (
-            <div>• Reduce cycle time by {Math.abs(goal.targetCycleTimePct)}%</div>
-          )}
-          {goal.targetMaxPressurePct && (
-            <div>• Reduce max pressure by {Math.abs(goal.targetMaxPressurePct)}%</div>
-          )}
-          {goal.targetEfficiencyPct && (
-            <div>• Improve efficiency by {Math.abs(goal.targetEfficiencyPct)}%</div>
-          )}
-          {!goal.targetCycleTimePct && !goal.targetMaxPressurePct && !goal.targetEfficiencyPct && (
-            <div>• No specific optimization goal set</div>
-          )}
-        </div>
-      </div> */}
 
-      {}
-     
+                <div className="text-xs text-gray-300 space-y-1">
+                  <div>
+                    Current: {formatParameterValue(suggestion.parameter, suggestion.currentValue)} {formatParameterUnit(suggestion.parameter)}
+                  </div>
+                  <div>
+                    Suggested: {formatParameterValue(suggestion.parameter, suggestion.suggestedValue)} {formatParameterUnit(suggestion.parameter)}
+                    <span
+                      className={`ml-2 ${suggestion.change > 0 ? "text-green-400" : "text-red-400"}`}
+                    >
+                      ({suggestion.change > 0 ? "+" : ""}{suggestion.parameter === "pumpEfficiency"
+                        ? (suggestion.change * 100).toFixed(1) + "%"
+                        : suggestion.change.toFixed(1)})
+                    </span>
+                  </div>
+                  <div className="text-blue-300">→ {suggestion.impact}</div>
+                  {suggestion.outOfRange && (
+                    <div className="text-amber-400 flex items-center gap-1">
+                      <AlertTriangle size={10} />
+                      Outside recommended range
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
