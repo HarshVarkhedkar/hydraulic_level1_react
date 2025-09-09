@@ -94,6 +94,7 @@ export class MLModel {
       temperatureC: 40 + inputs.motorRpm / 1000,
       vibration: 0.5 + inputs.holdingLoadTon / 100,
       flowLpm: (inputs.motorRpm * inputs.pumpEfficiency) / 20,
+      systemEfficiency: inputs.pumpEfficiency * 100 - inputs.systemLossBar, // %
     };
   }
 
@@ -156,17 +157,28 @@ export class MLModel {
         else if (healthPred === 'Warning') status = 'Warning';
         else status = 'Normal';
       }
-    } else {
-      maxPressure =
-        this.FALLBACK.pressure.intercept +
-        this.FALLBACK.pressure.boreCm * (inputs.boreCm ?? 0);
-      efficiency = this.FALLBACK.efficiency.intercept;
-      cycleTime = this.FALLBACK.cycleTime.intercept;
     }
 
-    maxPressure = Math.max(0, maxPressure);
-    efficiency = Math.max(0, Math.min(1, efficiency / 100));
-    cycleTime = Math.max(0, cycleTime);
+    // 🚨 Hybrid Fallback
+    if (!maxPressure || isNaN(maxPressure)) {
+      maxPressure = inputs.systemLossBar + inputs.deadLoadTon * 10; // rough bar estimate
+    }
+
+    if (!efficiency || isNaN(efficiency)) {
+      efficiency = inputs.pumpEfficiency * 100; // simulator fallback
+    }
+
+    // Clamp efficiency strictly to 0–100%
+    efficiency = Math.min(100, Math.max(0, efficiency));
+
+    if (!cycleTime || isNaN(cycleTime)) {
+      cycleTime = (inputs.holdingLoadTon + inputs.deadLoadTon) / (inputs.motorRpm / 60); // sec approx
+    }
+
+    // 🚨 Rule-based status override (final layer)
+    if (efficiency < 20) status = 'Critical';
+    else if (efficiency < 50) status = 'Warning';
+    else status = 'Normal';
 
     const confidence: 'low' | 'medium' | 'high' =
       this.source === 'json' ? 'high' : 'medium';

@@ -47,11 +47,20 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
   }, [inputs, goal]);
 
   const handleGeneratePDF = async () => {
-    if (!prediction) return;
+    if (!prediction) {
+      alert('Please wait for predictions to load before generating PDF.');
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      alert('Please run a simulation first to generate charts for the PDF report.');
+      return;
+    }
 
     setIsGeneratingPDF(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Add a small delay to ensure any UI updates are complete
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const pdfGenerator = new PDFReportGenerator();
       await pdfGenerator.generateReport({
@@ -63,6 +72,8 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         warnings,
         tips
       });
+      
+      console.log('✅ PDF report generated successfully with charts');
     } catch (error) {
       console.error('❌ Error generating PDF:', error);
       alert('Failed to generate PDF report. Please ensure simulation has been run and try again.');
@@ -170,8 +181,9 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
         </div>
         <button
           onClick={handleGeneratePDF}
-          disabled={isGeneratingPDF}
+          disabled={isGeneratingPDF || !data || data.length === 0}
           className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+          title={!data || data.length === 0 ? "Run simulation first to generate charts" : "Generate PDF report with charts"}
         >
           {isGeneratingPDF ? (
             <>
@@ -186,6 +198,15 @@ export const AIPredictionPanel: React.FC<AIPredictionPanelProps> = ({
           )}
         </button>
       </div>
+
+      {/* Status indicator for PDF generation */}
+      {(!data || data.length === 0) && (
+        <div className="mb-4 p-2 bg-amber-900/50 border border-amber-600/50 rounded text-xs">
+          <span className="text-amber-300">
+            ⚠️ Run simulation first to include charts in PDF report
+          </span>
+        </div>
+      )}
 
       {/* Model Source Info */}
       <div className="mb-4 p-2 bg-gray-700 rounded text-xs">
